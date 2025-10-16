@@ -1,13 +1,13 @@
 --[[ 
-Sebaxhub: Hub arrastável com bordas arredondadas e 2 botões.
+Sebaxhub: Hub arrastável com bordas arredondadas.
 Botão "Float é destivar float": ao pressionar Q, alterna entre criar/destruir plataformas sob o jogador.
+Botão "ESP de Base": destaca todas as partes chamadas "Base" e mostra quantos segundos faltam para abrir (atributo "TempoParaAbrir").
 Executável em ambientes como Roblox Studio (LocalScript).
 --]]
 
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 
 -- GUI creation
 local screenGui = Instance.new("ScreenGui")
@@ -22,16 +22,13 @@ mainFrame.BorderSizePixel = 0
 mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
 mainFrame.Parent = screenGui
 
--- Rounded corners
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 18)
 corner.Parent = mainFrame
 
--- Dragging logic
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Title
 local title = Instance.new("TextLabel")
 title.Text = "Sebaxhub"
 title.Font = Enum.Font.FredokaOne
@@ -41,7 +38,7 @@ title.BackgroundTransparency = 1
 title.Size = UDim2.new(1,0,0,36)
 title.Parent = mainFrame
 
--- Button 1: Float é destivar float
+-- Botão Float
 local floatBtn = Instance.new("TextButton")
 floatBtn.Text = "Float é destivar float"
 floatBtn.Font = Enum.Font.FredokaOne
@@ -56,9 +53,9 @@ local btnCorner = Instance.new("UICorner")
 btnCorner.CornerRadius = UDim.new(0, 12)
 btnCorner.Parent = floatBtn
 
--- Button 2: Exemplo (você pode trocar por outro)
+-- Botão ESP de Base
 local btn2 = Instance.new("TextButton")
-btn2.Text = "Outro Botão"
+btn2.Text = "ESP de Base"
 btn2.Font = Enum.Font.FredokaOne
 btn2.TextColor3 = Color3.fromRGB(255,255,255)
 btn2.TextSize = 18
@@ -78,7 +75,6 @@ local platform = nil
 local function toggleFloat()
     floatActive = not floatActive
     if floatActive then
-        -- Cria plataforma sob o player
         local character = player.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             platform = Instance.new("Part")
@@ -90,13 +86,9 @@ local function toggleFloat()
             platform.Name = "SebaxhubFloat"
             platform.Parent = workspace
             platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
-            
-            -- Atualiza posição para seguir o player
             platform:GetPropertyChangedSignal("Parent"):Connect(function()
                 platform = nil
             end)
-            
-            -- Loop para atualizar (até desativar)
             spawn(function()
                 while floatActive and platform and character and character:FindFirstChild("HumanoidRootPart") do
                     platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
@@ -106,7 +98,6 @@ local function toggleFloat()
         end
         floatBtn.Text = "Desativar Float"
     else
-        -- Remove plataforma
         if platform then
             platform:Destroy()
             platform = nil
@@ -115,10 +106,8 @@ local function toggleFloat()
     end
 end
 
--- Botão ativa/desativa
 floatBtn.MouseButton1Click:Connect(toggleFloat)
 
--- Tecla Q ativa/desativa
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.Q then
@@ -126,18 +115,82 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- Exemplo para segundo botão
+-- ESP de Base com contador de tempo
+local espActive = false
+local espObjects = {}
+
+local function clearESP()
+    for _, data in ipairs(espObjects) do
+        if data.box then data.box:Destroy() end
+        if data.bill then data.bill:Destroy() end
+    end
+    espObjects = {}
+end
+
+local function updateESP()
+    for _, data in ipairs(espObjects) do
+        if data.base and data.bill then
+            local tempo = data.base:GetAttribute("TempoParaAbrir")
+            if typeof(tempo) == "number" then
+                if tempo > 0 then
+                    data.bill.Text = "Abre em: " .. math.ceil(tempo) .. "s"
+                else
+                    data.bill.Text = "Base aberta!"
+                end
+            else
+                data.bill.Text = "Sem tempo"
+            end
+        end
+    end
+end
+
 btn2.MouseButton1Click:Connect(function()
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Sebaxhub",
-        Text = "Segundo botão clicado!",
-        Duration = 2
-    })
+    espActive = not espActive
+    clearESP()
+    if espActive then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "Base" then
+                -- Box ESP
+                local box = Instance.new("BoxHandleAdornment")
+                box.Adornee = obj
+                box.AlwaysOnTop = true
+                box.ZIndex = 10
+                box.Size = obj.Size + Vector3.new(0.2,0.2,0.2)
+                box.Color3 = Color3.fromRGB(255, 255, 0)
+                box.Transparency = 0.6
+                box.Parent = obj
+                -- Texto de tempo
+                local bill = Instance.new("BillboardGui")
+                bill.Name = "SebaxhubESPBill"
+                bill.Adornee = obj
+                bill.Parent = obj
+                bill.Size = UDim2.new(0, 120, 0, 30)
+                bill.StudsOffset = Vector3.new(0, obj.Size.Y/2 + 1.5, 0)
+                bill.AlwaysOnTop = true
+                local txt = Instance.new("TextLabel")
+                txt.Size = UDim2.new(1,0,1,0)
+                txt.BackgroundTransparency = 1
+                txt.TextColor3 = Color3.fromRGB(255,255,0)
+                txt.Font = Enum.Font.FredokaOne
+                txt.TextSize = 16
+                txt.Text = ""
+                txt.Parent = bill
+                table.insert(espObjects, {base=obj, box=box, bill=txt})
+            end
+        end
+        btn2.Text = "Desativar ESP de Base"
+        -- Atualizador de texto em tempo real
+        spawn(function()
+            while espActive do
+                updateESP()
+                wait(0.3)
+            end
+        end)
+    else
+        btn2.Text = "ESP de Base"
+    end
 end)
 
--- Protege de múltiplas execuções duplicadas
 if workspace:FindFirstChild("SebaxhubFloat") and not floatActive then
     workspace.SebaxhubFloat:Destroy()
 end
-
--- Fim do script Sebaxhub
