@@ -8,8 +8,8 @@ screenGui.Name = "Sebaxhub"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 130)
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -65)
+mainFrame.Size = UDim2.new(0, 250, 0, 120)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -60)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 mainFrame.BorderSizePixel = 0
 mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
@@ -31,62 +31,68 @@ title.BackgroundTransparency = 1
 title.Size = UDim2.new(1,0,0,36)
 title.Parent = mainFrame
 
--- Botão de aumentar velocidade
-local speedUpBtn = Instance.new("TextButton")
-speedUpBtn.Text = "Aumentar Velocidade"
-speedUpBtn.Font = Enum.Font.FredokaOne
-speedUpBtn.TextColor3 = Color3.fromRGB(255,255,255)
-speedUpBtn.TextSize = 18
-speedUpBtn.BackgroundColor3 = Color3.fromRGB(60,220,120)
-speedUpBtn.Size = UDim2.new(0.85,0,0,36)
-speedUpBtn.Position = UDim2.new(0.075,0,0.44,0)
-speedUpBtn.Parent = mainFrame
+-- Botão Float
+local floatBtn = Instance.new("TextButton")
+floatBtn.Text = "Float é destivar float"
+floatBtn.Font = Enum.Font.FredokaOne
+floatBtn.TextColor3 = Color3.fromRGB(255,255,255)
+floatBtn.TextSize = 18
+floatBtn.BackgroundColor3 = Color3.fromRGB(60,120,220)
+floatBtn.Size = UDim2.new(0.85,0,0,36)
+floatBtn.Position = UDim2.new(0.075,0,0.45,0)
+floatBtn.Parent = mainFrame
 
-local upCorner = Instance.new("UICorner")
-upCorner.CornerRadius = UDim.new(0, 12)
-upCorner.Parent = speedUpBtn
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = floatBtn
 
--- Velocidade real
-local minSpeed = 8
-local maxSpeed = 300 -- pode deixar mais alto se quiser muito rápido
-local speedStep = 25 -- quanto vai aumentar por clique ou tecla
+-- Float Platform Logic
+local floatActive = false
+local platform = nil
 
-local function getHumanoid()
-    local char = player.Character or player.CharacterAdded:Wait()
-    return char:FindFirstChildOfClass("Humanoid")
-end
-
-local function setSpeed(newSpeed)
-    local humanoid = getHumanoid()
-    if humanoid then
-        humanoid.WalkSpeed = math.clamp(newSpeed, minSpeed, maxSpeed)
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Sebaxhub",
-            Text = "Velocidade atual: " .. humanoid.WalkSpeed,
-            Duration = 1.5
-        })
+local function toggleFloat()
+    floatActive = not floatActive
+    if floatActive then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(7,1,7)
+            platform.Anchored = true
+            platform.CanCollide = true
+            platform.Color = Color3.fromRGB(60,120,220)
+            platform.Material = Enum.Material.Neon
+            platform.Name = "SebaxhubFloat"
+            platform.Parent = workspace
+            platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
+            platform:GetPropertyChangedSignal("Parent"):Connect(function()
+                platform = nil
+            end)
+            spawn(function()
+                while floatActive and platform and character and character:FindFirstChild("HumanoidRootPart") do
+                    platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
+                    wait(0.03)
+                end
+            end)
+        end
+        floatBtn.Text = "Desativar Float"
+    else
+        if platform then
+            platform:Destroy()
+            platform = nil
+        end
+        floatBtn.Text = "Float é destivar float"
     end
 end
 
-speedUpBtn.MouseButton1Click:Connect(function()
-    local humanoid = getHumanoid()
-    if humanoid then
-        setSpeed(humanoid.WalkSpeed + speedStep)
-    end
-end)
+floatBtn.MouseButton1Click:Connect(toggleFloat)
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    if input.KeyCode == Enum.KeyCode.E then
-        local humanoid = getHumanoid()
-        if humanoid then
-            setSpeed(humanoid.WalkSpeed + speedStep)
-        end
+    if input.KeyCode == Enum.KeyCode.Q then
+        toggleFloat()
     end
 end)
 
--- Mantém a velocidade ao respawn
-player.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.WalkSpeed = minSpeed
-end)
+if workspace:FindFirstChild("SebaxhubFloat") and not floatActive then
+    workspace.SebaxhubFloat:Destroy()
+end
