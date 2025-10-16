@@ -31,21 +31,6 @@ title.BackgroundTransparency = 1
 title.Size = UDim2.new(1,0,0,36)
 title.Parent = mainFrame
 
--- Botão Float
-local floatBtn = Instance.new("TextButton")
-floatBtn.Text = "Float é destivar float"
-floatBtn.Font = Enum.Font.FredokaOne
-floatBtn.TextColor3 = Color3.fromRGB(255,255,255)
-floatBtn.TextSize = 18
-floatBtn.BackgroundColor3 = Color3.fromRGB(60,120,220)
-floatBtn.Size = UDim2.new(0.85,0,0,36)
-floatBtn.Position = UDim2.new(0.075,0,0.16,0)
-floatBtn.Parent = mainFrame
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 12)
-btnCorner.Parent = floatBtn
-
 -- Botão de aumentar velocidade
 local speedUpBtn = Instance.new("TextButton")
 speedUpBtn.Text = "Aumentar Velocidade"
@@ -76,55 +61,14 @@ local downCorner = Instance.new("UICorner")
 downCorner.CornerRadius = UDim.new(0, 12)
 downCorner.Parent = speedDownBtn
 
--- Float Platform Logic
-local floatActive = false
-local platform = nil
-
-local function toggleFloat()
-    floatActive = not floatActive
-    if floatActive then
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            platform = Instance.new("Part")
-            platform.Size = Vector3.new(7,1,7)
-            platform.Anchored = true
-            platform.CanCollide = true
-            platform.Color = Color3.fromRGB(60,120,220)
-            platform.Material = Enum.Material.Neon
-            platform.Name = "SebaxhubFloat"
-            platform.Parent = workspace
-            platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
-            platform:GetPropertyChangedSignal("Parent"):Connect(function()
-                platform = nil
-            end)
-            spawn(function()
-                while floatActive and platform and character and character:FindFirstChild("HumanoidRootPart") do
-                    platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
-                    wait(0.03)
-                end
-            end)
-        end
-        floatBtn.Text = "Desativar Float"
-    else
-        if platform then
-            platform:Destroy()
-            platform = nil
-        end
-        floatBtn.Text = "Float é destivar float"
-    end
-end
-
-floatBtn.MouseButton1Click:Connect(toggleFloat)
-
+-- Velocidade real
 local minSpeed = 8
 local maxSpeed = 100
 local speedStep = 8
 
 local function getHumanoid()
-    local char = player.Character
-    if char then
-        return char:FindFirstChildOfClass("Humanoid")
-    end
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:FindFirstChildOfClass("Humanoid")
 end
 
 local function setSpeed(newSpeed)
@@ -133,7 +77,7 @@ local function setSpeed(newSpeed)
         humanoid.WalkSpeed = math.clamp(newSpeed, minSpeed, maxSpeed)
         game.StarterGui:SetCore("SendNotification", {
             Title = "Sebaxhub",
-            Text = "Velocidade: " .. humanoid.WalkSpeed,
+            Text = "Velocidade atual: " .. humanoid.WalkSpeed,
             Duration = 1.5
         })
     end
@@ -155,19 +99,12 @@ end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    -- FLOAT: tecla Q
-    if input.KeyCode == Enum.KeyCode.Q then
-        toggleFloat()
-    end
-    -- Aumentar velocidade: tecla E
     if input.KeyCode == Enum.KeyCode.E then
         local humanoid = getHumanoid()
         if humanoid then
             setSpeed(humanoid.WalkSpeed + speedStep)
         end
-    end
-    -- Diminuir velocidade: tecla R
-    if input.KeyCode == Enum.KeyCode.R then
+    elseif input.KeyCode == Enum.KeyCode.R then
         local humanoid = getHumanoid()
         if humanoid then
             setSpeed(humanoid.WalkSpeed - speedStep)
@@ -175,6 +112,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
-if workspace:FindFirstChild("SebaxhubFloat") and not floatActive then
-    workspace.SebaxhubFloat:Destroy()
-end
+-- Mantém a velocidade ao respawn
+player.CharacterAdded:Connect(function(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.WalkSpeed = minSpeed
+end)
