@@ -1,0 +1,180 @@
+--[[ 
+Sebaxhub: Hub arrastável com bordas arredondadas e 2 funções principais.
+1. Botão Float: ativa/desativa plataforma flutuante com Q ou botão.
+2. Botões de velocidade: aumentar ou diminuir a velocidade do personagem.
+Executável como LocalScript em StarterGui do Roblox Studio.
+--]]
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- GUI creation
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Sebaxhub"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+mainFrame.BorderSizePixel = 0
+mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+mainFrame.Parent = screenGui
+
+-- Rounded corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 18)
+corner.Parent = mainFrame
+
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Text = "Sebaxhub"
+title.Font = Enum.Font.FredokaOne
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextSize = 22
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1,0,0,36)
+title.Parent = mainFrame
+
+-- Botão Float
+local floatBtn = Instance.new("TextButton")
+floatBtn.Text = "Float é destivar float"
+floatBtn.Font = Enum.Font.FredokaOne
+floatBtn.TextColor3 = Color3.fromRGB(255,255,255)
+floatBtn.TextSize = 18
+floatBtn.BackgroundColor3 = Color3.fromRGB(60,120,220)
+floatBtn.Size = UDim2.new(0.85,0,0,36)
+floatBtn.Position = UDim2.new(0.075,0,0.25,0)
+floatBtn.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = floatBtn
+
+-- Botão de aumentar velocidade
+local speedUpBtn = Instance.new("TextButton")
+speedUpBtn.Text = "Aumentar Velocidade"
+speedUpBtn.Font = Enum.Font.FredokaOne
+speedUpBtn.TextColor3 = Color3.fromRGB(255,255,255)
+speedUpBtn.TextSize = 18
+speedUpBtn.BackgroundColor3 = Color3.fromRGB(60,220,120)
+speedUpBtn.Size = UDim2.new(0.85,0,0,36)
+speedUpBtn.Position = UDim2.new(0.075,0,0.50,0)
+speedUpBtn.Parent = mainFrame
+
+local upCorner = Instance.new("UICorner")
+upCorner.CornerRadius = UDim.new(0, 12)
+upCorner.Parent = speedUpBtn
+
+-- Botão de diminuir velocidade
+local speedDownBtn = Instance.new("TextButton")
+speedDownBtn.Text = "Diminuir Velocidade"
+speedDownBtn.Font = Enum.Font.FredokaOne
+speedDownBtn.TextColor3 = Color3.fromRGB(255,255,255)
+speedDownBtn.TextSize = 18
+speedDownBtn.BackgroundColor3 = Color3.fromRGB(220,60,60)
+speedDownBtn.Size = UDim2.new(0.85,0,0,36)
+speedDownBtn.Position = UDim2.new(0.075,0,0.75,0)
+speedDownBtn.Parent = mainFrame
+
+local downCorner = Instance.new("UICorner")
+downCorner.CornerRadius = UDim.new(0, 12)
+downCorner.Parent = speedDownBtn
+
+-- Float Platform Logic
+local floatActive = false
+local platform = nil
+
+local function toggleFloat()
+    floatActive = not floatActive
+    if floatActive then
+        -- Cria plataforma sob o player
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(7,1,7)
+            platform.Anchored = true
+            platform.CanCollide = true
+            platform.Color = Color3.fromRGB(60,120,220)
+            platform.Material = Enum.Material.Neon
+            platform.Name = "SebaxhubFloat"
+            platform.Parent = workspace
+            platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
+            platform:GetPropertyChangedSignal("Parent"):Connect(function()
+                platform = nil
+            end)
+            spawn(function()
+                while floatActive and platform and character and character:FindFirstChild("HumanoidRootPart") do
+                    platform.Position = character.HumanoidRootPart.Position - Vector3.new(0,3,0)
+                    wait(0.03)
+                end
+            end)
+        end
+        floatBtn.Text = "Desativar Float"
+    else
+        if platform then
+            platform:Destroy()
+            platform = nil
+        end
+        floatBtn.Text = "Float é destivar float"
+    end
+end
+
+floatBtn.MouseButton1Click:Connect(toggleFloat)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        toggleFloat()
+    end
+end)
+
+-- Velocidade
+local minSpeed = 8
+local maxSpeed = 100
+local speedStep = 8
+
+local function getHumanoid()
+    local char = player.Character
+    if char then
+        return char:FindFirstChildOfClass("Humanoid")
+    end
+end
+
+local function setSpeed(newSpeed)
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.WalkSpeed = math.clamp(newSpeed, minSpeed, maxSpeed)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Sebaxhub",
+            Text = "Velocidade: " .. humanoid.WalkSpeed,
+            Duration = 1.5
+        })
+    end
+end
+
+speedUpBtn.MouseButton1Click:Connect(function()
+    local humanoid = getHumanoid()
+    if humanoid then
+        setSpeed(humanoid.WalkSpeed + speedStep)
+    end
+end)
+
+speedDownBtn.MouseButton1Click:Connect(function()
+    local humanoid = getHumanoid()
+    if humanoid then
+        setSpeed(humanoid.WalkSpeed - speedStep)
+    end
+end)
+
+-- Protege de múltiplas execuções duplicadas
+if workspace:FindFirstChild("SebaxhubFloat") and not floatActive then
+    workspace.SebaxhubFloat:Destroy()
+end
+
+-- Fim do script Sebaxhub
