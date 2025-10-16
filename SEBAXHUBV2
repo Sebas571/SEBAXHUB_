@@ -8,8 +8,8 @@ screenGui.Name = "Sebaxhub"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -100)
+mainFrame.Size = UDim2.new(0, 250, 0, 130)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -65)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 mainFrame.BorderSizePixel = 0
 mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
@@ -46,25 +46,10 @@ local upCorner = Instance.new("UICorner")
 upCorner.CornerRadius = UDim.new(0, 12)
 upCorner.Parent = speedUpBtn
 
--- Botão de diminuir velocidade
-local speedDownBtn = Instance.new("TextButton")
-speedDownBtn.Text = "Diminuir Velocidade"
-speedDownBtn.Font = Enum.Font.FredokaOne
-speedDownBtn.TextColor3 = Color3.fromRGB(255,255,255)
-speedDownBtn.TextSize = 18
-speedDownBtn.BackgroundColor3 = Color3.fromRGB(220,60,60)
-speedDownBtn.Size = UDim2.new(0.85,0,0,36)
-speedDownBtn.Position = UDim2.new(0.075,0,0.72,0)
-speedDownBtn.Parent = mainFrame
-
-local downCorner = Instance.new("UICorner")
-downCorner.CornerRadius = UDim.new(0, 12)
-downCorner.Parent = speedDownBtn
-
 -- Velocidade real
 local minSpeed = 8
-local maxSpeed = 100
-local speedStep = 8
+local maxSpeed = 300 -- pode deixar mais alto se quiser muito rápido
+local speedStep = 25 -- quanto vai aumentar por clique ou tecla
 
 local function getHumanoid()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -90,24 +75,12 @@ speedUpBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-speedDownBtn.MouseButton1Click:Connect(function()
-    local humanoid = getHumanoid()
-    if humanoid then
-        setSpeed(humanoid.WalkSpeed - speedStep)
-    end
-end)
-
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.E then
         local humanoid = getHumanoid()
         if humanoid then
             setSpeed(humanoid.WalkSpeed + speedStep)
-        end
-    elseif input.KeyCode == Enum.KeyCode.R then
-        local humanoid = getHumanoid()
-        if humanoid then
-            setSpeed(humanoid.WalkSpeed - speedStep)
         end
     end
 end)
