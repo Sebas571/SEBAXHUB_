@@ -1,14 +1,14 @@
 --[[ 
-Sebaxhub: Hub arrastável com bordas arredondadas e 2 funções principais.
+Sebaxhub: Hub arrastável com bordas arredondadas e 3 funções principais.
 1. Botão Float: ativa/desativa plataforma flutuante com Q ou botão.
-2. Botões de velocidade: aumentar ou diminuir a velocidade do personagem.
+2. Botão/tecla para aumentar velocidade (botão ou tecla E).
+3. Botão/tecla para diminuir velocidade (botão ou tecla R).
 Executável como LocalScript em StarterGui do Roblox Studio.
 --]]
 
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 
 -- GUI creation
 local screenGui = Instance.new("ScreenGui")
@@ -49,7 +49,7 @@ floatBtn.TextColor3 = Color3.fromRGB(255,255,255)
 floatBtn.TextSize = 18
 floatBtn.BackgroundColor3 = Color3.fromRGB(60,120,220)
 floatBtn.Size = UDim2.new(0.85,0,0,36)
-floatBtn.Position = UDim2.new(0.075,0,0.25,0)
+floatBtn.Position = UDim2.new(0.075,0,0.18,0)
 floatBtn.Parent = mainFrame
 
 local btnCorner = Instance.new("UICorner")
@@ -64,7 +64,7 @@ speedUpBtn.TextColor3 = Color3.fromRGB(255,255,255)
 speedUpBtn.TextSize = 18
 speedUpBtn.BackgroundColor3 = Color3.fromRGB(60,220,120)
 speedUpBtn.Size = UDim2.new(0.85,0,0,36)
-speedUpBtn.Position = UDim2.new(0.075,0,0.50,0)
+speedUpBtn.Position = UDim2.new(0.075,0,0.43,0)
 speedUpBtn.Parent = mainFrame
 
 local upCorner = Instance.new("UICorner")
@@ -79,7 +79,7 @@ speedDownBtn.TextColor3 = Color3.fromRGB(255,255,255)
 speedDownBtn.TextSize = 18
 speedDownBtn.BackgroundColor3 = Color3.fromRGB(220,60,60)
 speedDownBtn.Size = UDim2.new(0.85,0,0,36)
-speedDownBtn.Position = UDim2.new(0.075,0,0.75,0)
+speedDownBtn.Position = UDim2.new(0.075,0,0.68,0)
 speedDownBtn.Parent = mainFrame
 
 local downCorner = Instance.new("UICorner")
@@ -93,7 +93,6 @@ local platform = nil
 local function toggleFloat()
     floatActive = not floatActive
     if floatActive then
-        -- Cria plataforma sob o player
         local character = player.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             platform = Instance.new("Part")
@@ -126,7 +125,6 @@ local function toggleFloat()
 end
 
 floatBtn.MouseButton1Click:Connect(toggleFloat)
-
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.Q then
@@ -158,6 +156,7 @@ local function setSpeed(newSpeed)
     end
 end
 
+-- Botões
 speedUpBtn.MouseButton1Click:Connect(function()
     local humanoid = getHumanoid()
     if humanoid then
@@ -169,6 +168,22 @@ speedDownBtn.MouseButton1Click:Connect(function()
     local humanoid = getHumanoid()
     if humanoid then
         setSpeed(humanoid.WalkSpeed - speedStep)
+    end
+end)
+
+-- Teclas E (aumentar) e R (diminuir)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.E then
+        local humanoid = getHumanoid()
+        if humanoid then
+            setSpeed(humanoid.WalkSpeed + speedStep)
+        end
+    elseif input.KeyCode == Enum.KeyCode.R then
+        local humanoid = getHumanoid()
+        if humanoid then
+            setSpeed(humanoid.WalkSpeed - speedStep)
+        end
     end
 end)
 
